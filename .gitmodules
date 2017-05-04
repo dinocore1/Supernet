@@ -1,0 +1,3 @@
+[submodule "libraries/jstun"]
+	path = libraries/jstun
+	url = git@github.com:dinocore1/JSTUN.git
