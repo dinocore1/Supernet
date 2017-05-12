@@ -2,6 +2,7 @@ package com.devsmart.supernet;
 
 
 import com.google.common.base.Preconditions;
+import com.google.common.net.InetAddresses;
 import de.javawi.jstun.attribute.ChangeRequest;
 import de.javawi.jstun.attribute.ChangedAddress;
 import de.javawi.jstun.attribute.MappedAddress;
@@ -51,9 +52,9 @@ public class SupernetClient {
             SupernetClient retval = new SupernetClient();
             retval.mClientId = mId;
             retval.mSTUNServer = mSTUNServer;
-            retval.mUDPSocket = new DatagramSocket();
+            retval.mUDPSocket = new DatagramSocket(new InetSocketAddress(InetAddresses.forString("0.0.0.0"), mUDPPort));
             retval.mUDPSocket.setReuseAddress(true);
-            //retval.mUDPSocket.bind(new InetSocketAddress(mUDPPort));
+            retval.mUDPSocket.setSoTimeout(1000);
             return retval;
         }
     }
@@ -79,10 +80,12 @@ public class SupernetClient {
             if (mUDPReceiveThread != null) {
                 mUDPSocketRunning = false;
                 mUDPReceiveThread.join();
+                mUDPReceiveThread = null;
             }
         } catch (Exception e) {
             LOGGER.error("", e);
         }
+        LOGGER.info("Client shutdown");
 
     }
 
@@ -96,7 +99,7 @@ public class SupernetClient {
         private MessageHeader mSendMH;
 
         void doIt() throws Exception {
-            LOGGER.info("performing STUN binding request. Connecting to: ");
+            LOGGER.info("performing STUN binding request. Connecting to: {}", mSTUNServer);
 
             mSendMH = new MessageHeader(MessageHeader.MessageHeaderType.BindingRequest);
             mSendMH.generateTransactionID();
@@ -153,23 +156,23 @@ public class SupernetClient {
 
         @Override
         public void run() {
+            LOGGER.info("starting UDP server on: {}", mUDPSocket.getLocalSocketAddress());
             mUDPSocketRunning = true;
             while(mUDPSocketRunning) {
                 DatagramPacket receivedPacket = createPacket();
                 try {
                     mUDPSocket.receive(receivedPacket);
 
-                    if(mSTUNBindingRequest != null && mSTUNBindingRequest.receive(receivedPacket)) {
-
+                    if (mSTUNBindingRequest != null && mSTUNBindingRequest.receive(receivedPacket)) {
                         //handled successfully
                     }
 
-
+                } catch (SocketTimeoutException e) {
                 } catch (IOException e) {
                     LOGGER.error("", e);
                 }
             }
-            LOGGER.info("exiting UDP receive thread: {}", mUDPSocket);
+            LOGGER.info("exiting UDP receive thread");
 
         }
     };

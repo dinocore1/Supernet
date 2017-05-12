@@ -17,4 +17,5 @@ dependencies {
     compile 'com.google.guava:guava:19.0'
     compile project(':libraries:jstun')
     testCompile 'junit:junit:4.12'
+    testCompile 'org.slf4j:slf4j-simple:1.7.7'
 }
