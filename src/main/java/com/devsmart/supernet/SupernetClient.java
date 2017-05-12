@@ -8,7 +8,6 @@ import de.javawi.jstun.attribute.ChangedAddress;
 import de.javawi.jstun.attribute.MappedAddress;
 import de.javawi.jstun.attribute.MessageAttribute;
 import de.javawi.jstun.header.MessageHeader;
-import de.javawi.jstun.header.MessageHeaderParsingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +46,7 @@ public class SupernetClient {
         }
 
         public SupernetClient build() throws IOException {
-            //Preconditions.checkState(mId != null);
+            Preconditions.checkState(mId != null);
 
             SupernetClient retval = new SupernetClient();
             retval.mClientId = mId;

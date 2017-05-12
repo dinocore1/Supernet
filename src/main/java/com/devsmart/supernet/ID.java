@@ -5,6 +5,7 @@ import com.google.common.io.BaseEncoding;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Random;
 
 public class ID {
     public static final int NUM_BYTES = 20;
@@ -13,6 +14,12 @@ public class ID {
 
     public static ID fromBase64String(String str) {
         byte[] data = BaseEncoding.base64Url().decode(str);
+        return new ID(data, 0);
+    }
+
+    public static ID createRandom(Random r) {
+        byte[] data = new byte[NUM_BYTES];
+        r.nextBytes(data);
         return new ID(data, 0);
     }
 
