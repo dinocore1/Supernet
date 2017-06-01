@@ -32,6 +32,8 @@ class SupernetClientImp extends SupernetClient {
         }
     });
 
+    RoutingTable mPeerRoutingTable;
+
 
     public void peerSeen(SocketAddress remoteAddress, ID remoteId) {
 

@@ -1,6 +1,8 @@
 package com.devsmart.supernet;
 
 
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +11,7 @@ import java.net.DatagramPacket;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 
 public class SupernetClientProtocolReceiver implements PacketReceiver {
 
@@ -87,7 +90,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
                     return receivePing(isRequest, packet);
 
                 case PACKET_FIND_PEERS:
-                    break;
+                    return receiveFindPeers(isRequest, packet);
 
                 case PACKET_ROUTE:
                     break;
@@ -145,6 +148,15 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             LOGGER.error("", e);
             return false;
         }
+    }
+
+    private boolean receiveFindPeers(boolean isRequest, DatagramPacket packet) {
+
+        if(isRequest) {
+            ArrayList<Peer> closestPeers = new ArrayList<Peer>(8);
+
+        }
+        return false;
     }
 
 

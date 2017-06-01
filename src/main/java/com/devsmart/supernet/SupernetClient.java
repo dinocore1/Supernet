@@ -44,6 +44,7 @@ public abstract class SupernetClient {
 
             SupernetClientImp retval = new SupernetClientImp();
             retval.mClientId = mId;
+            retval.mPeerRoutingTable = new RoutingTable(mId);
             retval.mSTUNServer = mSTUNServer;
             retval.mUDPSocket = new DatagramSocket(new InetSocketAddress(InetAddresses.forString("0.0.0.0"), mUDPPort));
             retval.mUDPSocket.setReuseAddress(true);
