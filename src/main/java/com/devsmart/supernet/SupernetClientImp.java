@@ -1,5 +1,6 @@
 package com.devsmart.supernet;
 
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,8 @@ class SupernetClientImp extends SupernetClient {
     });
 
     RoutingTable mPeerRoutingTable;
+    public final EventBus mEventBus = new EventBus();
+    PeerMaintenenceTask mPeerMaintenence = new PeerMaintenenceTask(this);
 
 
     public void peerSeen(SocketAddress remoteAddress, ID remoteId) {
@@ -49,6 +52,8 @@ class SupernetClientImp extends SupernetClient {
             mUDPReceiveThread = new Thread(mReceiveUDPTask, "Receive UDP");
             mUDPReceiveThread.start();
 
+            mPeerMaintenence.start();
+
             doSTUNBindingRequest();
 
         } catch (Exception e) {
@@ -59,6 +64,7 @@ class SupernetClientImp extends SupernetClient {
     @Override
     public void shutdown() {
         try {
+            mPeerMaintenence.stop();
             if (mUDPReceiveThread != null) {
                 mUDPSocketRunning = false;
                 mUDPReceiveThread.join();
@@ -87,6 +93,15 @@ class SupernetClientImp extends SupernetClient {
 
     public void post(Runnable r) {
         mMainThread.execute(r);
+    }
+
+    public void postEvent(final Object event) {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                mEventBus.post(event);
+            }
+        });
     }
 
     private final Runnable mReceiveUDPTask = new Runnable() {

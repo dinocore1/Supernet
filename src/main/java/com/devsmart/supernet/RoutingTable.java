@@ -5,9 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
+import java.util.*;
 
 public class RoutingTable {
 
@@ -23,9 +21,9 @@ public class RoutingTable {
 
     private final ID mLocalId;
 
-    private class Bucket {
+    public class Bucket {
         final int sharedPrefixBits;
-        final ArrayList<Peer> peers = new ArrayList<Peer>(MAX_BUCKET_SIZE);
+        final Set<Peer> peers = new HashSet<Peer>(MAX_BUCKET_SIZE);
 
         public Bucket(int sharedPrefixBits) {
             this.sharedPrefixBits = sharedPrefixBits;
@@ -37,7 +35,7 @@ public class RoutingTable {
         }
     }
 
-    private Bucket[] mBuckets = new Bucket[ID.NUM_BYTES * 8];
+    Bucket[] mBuckets = new Bucket[ID.NUM_BYTES * 8];
 
     public RoutingTable(ID localId) {
         mLocalId = localId;

@@ -1,11 +1,25 @@
 package com.devsmart.supernet;
 
 
+import com.google.common.collect.ComparisonChain;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Comparator;
 import java.util.Date;
 
 public class Peer {
+
+    public static final Comparator<Peer> OLDEST_ALIVE_FIRST = new Comparator<Peer>() {
+
+        @Override
+        public int compare(Peer o1, Peer o2) {
+            return ComparisonChain.start()
+                    .compare(o1.getStatus(), o2.getStatus())
+                    .compare(o1.mFirstSeen, o2.mFirstSeen)
+                    .result();
+        }
+    };
 
     public enum Status {
         ALIVE(10000),
@@ -61,5 +75,10 @@ public class Peer {
 
         Peer other = (Peer) obj;
         return id.equals(other.id) && address.equals(other.address);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s/%s (%s)", id.breifToString(), address, getStatus());
     }
 }

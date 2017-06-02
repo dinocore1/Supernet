@@ -1,6 +1,7 @@
 package com.devsmart.supernet;
 
 
+import com.devsmart.supernet.events.NewPeerDiscovered;
 import com.devsmart.ubjson.UBArray;
 import com.devsmart.ubjson.UBValue;
 import com.devsmart.ubjson.UBValueFactory;
@@ -66,16 +67,16 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     OK/ERROR
     */
 
-    private static final int HEADER_MAGIC_MASK = 0xF0;
-    private static final int HEADER_MAGIC = 0x20;
-    private static final int HEADER_PACKET_TYPE_MASK = 0x07;
-    private static final int HEADER_REQUEST_BIT = 0x08;
+    public static final int HEADER_MAGIC_MASK = 0xF0;
+    public static final int HEADER_MAGIC = 0x20;
+    public static final int HEADER_PACKET_TYPE_MASK = 0x07;
+    public static final int HEADER_REQUEST_BIT = 0x08;
 
-    private static final int PACKET_PING = 0;
-    private static final int PACKET_FIND_PEERS = 1;
-    private static final int PACKET_ROUTE = 2;
-    private static final int PACKET_CONNECT = 3;
-    private static final int PACKET_DISCONNECT = 4;
+    public static final int PACKET_PING = 0;
+    public static final int PACKET_FIND_PEERS = 1;
+    public static final int PACKET_ROUTE = 2;
+    public static final int PACKET_CONNECT = 3;
+    public static final int PACKET_DISCONNECT = 4;
 
     private SupernetClientImp mClient;
 
@@ -207,8 +208,15 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
                 int size = payload[1];
                 for(int i=0;i<size;i++) {
                     ID peerId = new ID(payload, 2 + i*(ID.NUM_BYTES+6));
-                    InetSocketAddress socketAddress = readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
-                    discoveredNewPeer(packet.getAddress(), peerId, socketAddress);
+                    InetSocketAddress peerSocketAddress = readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
+
+                    LOGGER.trace("discovered new peer: {}:{} from: {}", peerId, peerSocketAddress, packet.getSocketAddress());
+
+                    NewPeerDiscovered event = new NewPeerDiscovered();
+                    event.gossipPeer = packet.getSocketAddress();
+                    event.remoteId = peerId;
+                    event.socketAddress = peerSocketAddress;
+                    mClient.postEvent(event);
                 }
 
                 return true;
@@ -218,12 +226,6 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             LOGGER.error("", e);
             return false;
         }
-
-    }
-
-    private void discoveredNewPeer(InetAddress gossipAddress, ID peerId, InetSocketAddress peerSocketAddress) {
-        LOGGER.trace("discovered new peer: {}:{} from: {}", peerId, peerSocketAddress, gossipAddress);
-
 
     }
 

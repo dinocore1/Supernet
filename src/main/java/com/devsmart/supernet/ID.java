@@ -79,6 +79,10 @@ public class ID {
         return toString(BaseEncoding.base64Url());
     }
 
+    public String breifToString() {
+        return toString(BaseEncoding.base16()).substring(0, 5);
+    }
+
     public byte[] distance(ID o) {
         byte[] retval = new byte[NUM_BYTES];
         for(int i=0;i<NUM_BYTES;i++) {
