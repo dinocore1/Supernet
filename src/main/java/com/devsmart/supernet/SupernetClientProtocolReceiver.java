@@ -1,17 +1,21 @@
 package com.devsmart.supernet;
 
 
+import com.devsmart.ubjson.UBArray;
+import com.devsmart.ubjson.UBValue;
+import com.devsmart.ubjson.UBValueFactory;
+import com.devsmart.ubjson.UBWriter;
+import com.google.common.base.Function;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class SupernetClientProtocolReceiver implements PacketReceiver {
 
@@ -41,7 +45,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     Payload: ID of target
 
     Find Peers Response:
-    Payload: UBJSON Array list of ID+IPv4 Addresses cloest to target
+    Payload: UBJSON Array list of ID+IPv4 Addresses closest to target
 
     Route Request:
     Payload: uint8 hops + uint16 packet size + data payload
@@ -118,6 +122,22 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         buf[offset + 5] = (byte) (port & 0xFF);
     }
 
+    static InetSocketAddress readIPv4SocketAddress(byte[] buf, int offset) {
+        try {
+            byte[] addressBytes = new byte[4];
+            System.arraycopy(buf, offset, addressBytes, 0, 4);
+            InetAddress address = Inet4Address.getByAddress(addressBytes);
+            int port = (0xFF & buf[offset + 4]) << 8;
+            port |= (0xFF & buf[offset + 5]);
+
+            return new InetSocketAddress(address, port);
+        } catch (UnknownHostException e) {
+            LOGGER.error("", e);
+            Throwables.propagate(e);
+            return null;
+        }
+    }
+
     static DatagramPacket createPong(InetSocketAddress remoteAddress, ID id) {
         Inet4Address ipv4Address = (Inet4Address) remoteAddress.getAddress();
 
@@ -150,13 +170,61 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         }
     }
 
-    private boolean receiveFindPeers(boolean isRequest, DatagramPacket packet) {
-
-        if(isRequest) {
-            ArrayList<Peer> closestPeers = new ArrayList<Peer>(8);
-
+    byte[] createClosestPeersResponse(ID target) {
+        ArrayList<Peer> closestPeers = new ArrayList<Peer>(8);
+        Iterator<Peer> nearByPeers = mClient.mPeerRoutingTable.getClosestPeers(target).iterator();
+        for(int i=0;i<8 && nearByPeers.hasNext();i++) {
+            closestPeers.add(nearByPeers.next());
         }
-        return false;
+
+        byte[] retval = new byte[1 + (closestPeers.size() * (ID.NUM_BYTES + 6))];
+        retval[0] = HEADER_MAGIC | PACKET_FIND_PEERS;
+        retval[1] = (byte) closestPeers.size();
+
+        int i=0;
+        for(Peer p : closestPeers) {
+            p.id.write(retval, 2 + i*(ID.NUM_BYTES + 6));
+            InetSocketAddress address = (InetSocketAddress) p.address;
+
+            writeIPv4SocketAddress((Inet4Address) address.getAddress(), address.getPort(),
+                    retval, 2 + i*(ID.NUM_BYTES+6) + ID.NUM_BYTES);
+            i++;
+        }
+        return retval;
+    }
+
+    private boolean receiveFindPeers(boolean isRequest, DatagramPacket packet) {
+        try {
+            if (isRequest) {
+                final ID targetPeer = new ID(packet.getData(), 1);
+                byte[] payload = createClosestPeersResponse(targetPeer);
+                DatagramPacket responsePacket = new DatagramPacket(payload, payload.length, packet.getSocketAddress());
+                mClient.mUDPSocket.send(responsePacket);
+                return true;
+
+            } else {
+                byte[] payload = packet.getData();
+                int size = payload[1];
+                for(int i=0;i<size;i++) {
+                    ID peerId = new ID(payload, 2 + i*(ID.NUM_BYTES+6));
+                    InetSocketAddress socketAddress = readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
+                    discoveredNewPeer(packet.getAddress(), peerId, socketAddress);
+                }
+
+                return true;
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("", e);
+            return false;
+        }
+
+    }
+
+    private void discoveredNewPeer(InetAddress gossipAddress, ID peerId, InetSocketAddress peerSocketAddress) {
+        LOGGER.trace("discovered new peer: {}:{} from: {}", peerId, peerSocketAddress, gossipAddress);
+
+
     }
 
 
