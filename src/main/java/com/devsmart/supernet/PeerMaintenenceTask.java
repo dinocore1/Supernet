@@ -1,6 +1,8 @@
 package com.devsmart.supernet;
 
 
+import com.devsmart.supernet.events.NewPeerDiscovered;
+import com.google.common.eventbus.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +33,8 @@ public class PeerMaintenenceTask {
             mFindPeersTask.cancel(false);
         }
         mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
+
+        mClient.mEventBus.register(this);
     }
 
     public void stop() {
@@ -38,6 +42,14 @@ public class PeerMaintenenceTask {
             mFindPeersTask.cancel(false);
             mFindPeersTask = null;
         }
+
+        mClient.mEventBus.unregister(this);
+    }
+
+    @Subscribe
+    public void onNewPeerDiscovered(NewPeerDiscovered e) {
+
+
     }
 
     private final Runnable mFindPeersFunction = new Runnable() {
