@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,8 +49,30 @@ public class PeerMaintenenceTask {
 
     @Subscribe
     public void onNewPeerDiscovered(NewPeerDiscovered e) {
+        RoutingTable.Bucket bucket = mClient.mPeerRoutingTable.getBucket(e.remoteId);
+        if(bucket.peers.size() < RoutingTable.MAX_BUCKET_SIZE) {
+            StartConnectionTask newTask = new StartConnectionTask(e.remoteId, e.socketAddress, e.gossipPeer);
+            newTask.start();
+        }
+
+    }
+
+    private class StartConnectionTask {
+
+        private final ID mRemoteId;
+        private final SocketAddress mRemoteAddress;
+        private final SocketAddress mGossipPeer;
+
+        public StartConnectionTask(ID remoteId, SocketAddress remoteAddress, SocketAddress gossipPeer) {
+            mRemoteId = remoteId;
+            mRemoteAddress = remoteAddress;
+            mGossipPeer = gossipPeer;
+        }
 
 
+        public void start() {
+            
+        }
     }
 
     private final Runnable mFindPeersFunction = new Runnable() {
