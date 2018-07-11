@@ -71,6 +71,8 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     public static final int PACKET_CONNECT = 3;
     public static final int PACKET_DISCONNECT = 4;
 
+    public static
+
     SupernetClientImp mClient;
 
     @Override
@@ -132,7 +134,14 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         }
     }
 
-    static DatagramPacket createPong(InetSocketAddress remoteAddress, ID id) {
+    public static DatagramPacket createPing(InetSocketAddress remoteAddress, ID id) {
+        byte[] payload = new byte[1 + ID.NUM_BYTES];
+        payload[0] = HEADER_MAGIC | PACKET_PING | HEADER_REQUEST_BIT;
+        id.write(payload, 1);
+        return new DatagramPacket(payload, payload.length, remoteAddress);
+    }
+
+    public static DatagramPacket createPong(InetSocketAddress remoteAddress, ID id) {
         Inet4Address ipv4Address = (Inet4Address) remoteAddress.getAddress();
 
         byte[] payload = new byte[1 + ID.NUM_BYTES + 6]; // header + ID + IPv4 SocketAddress
@@ -147,11 +156,13 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     boolean receivePing(boolean isRequest, DatagramPacket packet) {
         try {
             final SocketAddress remoteAddress = packet.getSocketAddress();
+            final ID remoteId = new ID(packet.getData(), 1);
 
-            ID remoteId = new ID(packet.getData(), 1);
-            LOGGER.trace("Ping Received from: {}:{}", remoteAddress, remoteId);
+            Peer peer = new Peer(remoteId, packet.getAddress(), packet.getPort());
 
-            mClient.peerSeen(remoteAddress, remoteId);
+            LOGGER.trace("{} Received from: {}", isRequest ? "Ping" : "Pong", peer);
+
+            mClient.peerSeen(peer);
 
             if(isRequest) {
                 mClient.mUDPSocket.send(createPong((InetSocketAddress) remoteAddress, mClient.getID()));
@@ -178,7 +189,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         int i=0;
         for(Peer p : closestPeers) {
             p.id.write(retval, 2 + i*(ID.NUM_BYTES + 6));
-            InetSocketAddress address = (InetSocketAddress) p.address;
+            InetSocketAddress address = p.getSocketAddress();
 
             writeIPv4SocketAddress((Inet4Address) address.getAddress(), address.getPort(),
                     retval, 2 + i*(ID.NUM_BYTES+6) + ID.NUM_BYTES);
@@ -189,6 +200,8 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
 
     private boolean receiveFindPeers(boolean isRequest, DatagramPacket packet) {
         try {
+            final SocketAddress remoteAddress = packet.getSocketAddress();
+            LOGGER.trace("FindPeers Received from: {}", remoteAddress);
             if (isRequest) {
                 final ID targetPeer = new ID(packet.getData(), 1);
                 byte[] payload = createClosestPeersResponse(targetPeer);

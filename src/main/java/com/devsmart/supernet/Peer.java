@@ -2,7 +2,10 @@ package com.devsmart.supernet;
 
 
 import com.google.common.collect.ComparisonChain;
+import com.google.common.primitives.UnsignedBytes;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Comparator;
@@ -21,6 +24,17 @@ public class Peer {
         }
     };
 
+    public static final Comparator<Peer> BY_ID_ADDRESS = new Comparator<Peer>() {
+        @Override
+        public int compare(Peer o1, Peer o2) {
+
+            return ComparisonChain.start()
+                    .compare(o1.id, o2.id)
+                    .compare(o1.address.getAddress(), o2.address.getAddress(), UnsignedBytes.lexicographicalComparator())
+                    .result();
+        }
+    };
+
     public enum Status {
         ALIVE(10000),
         DIEING(30000),
@@ -34,13 +48,15 @@ public class Peer {
     }
 
     public final ID id;
-    public final SocketAddress address;
+    public final InetAddress address;
+    public final int port;
     public Date mFirstSeen;
     public Date mLastSeen;
 
-    public Peer(ID id, SocketAddress address) {
+    public Peer(ID id, InetAddress address, int port) {
         this.id = id;
         this.address = address;
+        this.port = port;
         this.mFirstSeen = new Date();
         markSeen();
     }
@@ -62,6 +78,10 @@ public class Peer {
         }
     }
 
+    public InetSocketAddress getSocketAddress() {
+        return new InetSocketAddress(address, port);
+    }
+
     @Override
     public int hashCode() {
         return id.hashCode();
@@ -74,7 +94,7 @@ public class Peer {
         }
 
         Peer other = (Peer) obj;
-        return id.equals(other.id) && address.equals(other.address);
+        return id.equals(other.id) && address.equals(other.address) && port == other.port;
     }
 
     @Override

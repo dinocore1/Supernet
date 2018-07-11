@@ -101,7 +101,7 @@ public class PeerMaintenenceTask {
 
             mClient.getID().write(payload, 1);
 
-            DatagramPacket packet = new DatagramPacket(payload, payload.length, p.address);
+            DatagramPacket packet = new DatagramPacket(payload, payload.length, p.getSocketAddress());
             mClient.mUDPSocket.send(packet);
         } catch (IOException e) {
             LOGGER.error("", e);

@@ -36,7 +36,9 @@ class SupernetClientImp extends SupernetClient {
     SupernetClientProtocolReceiver mBaseProtocolReceiver;
 
 
-    public void peerSeen(SocketAddress remoteAddress, ID remoteId) {
+    public void peerSeen(Peer peer) {
+        RoutingTable.Bucket bucket = mPeerRoutingTable.getBucket(peer.id);
+
 
     }
 
@@ -49,17 +51,11 @@ class SupernetClientImp extends SupernetClient {
 
                     InetSocketAddress address = Utils.parseSocketAddress(strAddress);
 
-                    LOGGER.trace("sending find peers to: {}", address);
+                    LOGGER.trace("sending ping to: {}", address);
 
-                    byte[] payload = new byte[1 + ID.NUM_BYTES];
-                    payload[0] = SupernetClientProtocolReceiver.HEADER_MAGIC
-                            | SupernetClientProtocolReceiver.HEADER_REQUEST_BIT
-                            | SupernetClientProtocolReceiver.PACKET_FIND_PEERS;
-
-                    getID().write(payload, 1);
-
-                    DatagramPacket packet = new DatagramPacket(payload, payload.length, address);
+                    DatagramPacket packet = SupernetClientProtocolReceiver.createPing(address, getID());
                     mUDPSocket.send(packet);
+
                 } catch (IOException e) {
                     LOGGER.error("", e);
                 }

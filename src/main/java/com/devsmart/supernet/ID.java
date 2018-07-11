@@ -2,12 +2,13 @@ package com.devsmart.supernet;
 
 
 import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
 
-public class ID {
+public class ID implements Comparable<ID> {
     public static final int NUM_BYTES = 20;
 
     private byte[] mData = new byte[NUM_BYTES];
@@ -143,4 +144,16 @@ public class ID {
     }
 
 
+    @Override
+    public int compareTo(ID o) {
+        int i = 0;
+        int retval;
+
+        while((retval = UnsignedBytes.compare(mData[i], o.mData[i])) == 0
+                && i < NUM_BYTES-1) {
+            i++;
+        }
+
+        return retval;
+    }
 }
