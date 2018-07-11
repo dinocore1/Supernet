@@ -146,6 +146,8 @@ class SupernetClientImp extends SupernetClient {
                 try {
                     mUDPSocket.receive(receivedPacket);
 
+                    LOGGER.trace("recived packet {}", receivedPacket.getAddress());
+
                     post(new Runnable() {
                         @Override
                         public void run() {
