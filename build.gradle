@@ -2,6 +2,7 @@ group 'com.devsmart'
 version '1.0.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'application'
 
 sourceCompatibility = 1.7
 
@@ -9,16 +10,16 @@ repositories {
     mavenCentral()
 }
 
-
-
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'com.dev-smart:devsmart-core:0.1.6'
     compile 'com.google.guava:guava:19.0'
     compile 'com.google.code.gson:gson:2.8.5'
-    compile 'com.dev-smart:ubjson:0.1.12'
+    compile 'com.dev-smart:ubjson:0.1.8'
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile project(':libraries:jstun')
     testCompile 'junit:junit:4.12'
     testCompile 'org.slf4j:slf4j-simple:1.7.7'
 }
+
+mainClassName = 'com.devsmart.supernet.Main'
