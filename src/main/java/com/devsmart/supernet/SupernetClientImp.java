@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketAddress;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,10 +32,38 @@ class SupernetClientImp extends SupernetClient {
 
     RoutingTable mPeerRoutingTable;
     public final EventBus mEventBus = new EventBus();
-    PeerMaintenenceTask mPeerMaintenence = new PeerMaintenenceTask(this);
+    PeerMaintenenceTask mPeerMaintenence;
 
 
     public void peerSeen(SocketAddress remoteAddress, ID remoteId) {
+
+    }
+
+    @Override
+    public void bootstrap(final String strAddress) {
+        mMainThread.execute(new Runnable(){
+            @Override
+            public void run() {
+                try {
+
+                    InetSocketAddress address = Utils.parseSocketAddress(strAddress);
+
+                    LOGGER.trace("sending find peers to: {}", address);
+
+                    byte[] payload = new byte[1 + ID.NUM_BYTES];
+                    payload[0] = SupernetClientProtocolReceiver.HEADER_MAGIC
+                            | SupernetClientProtocolReceiver.HEADER_REQUEST_BIT
+                            | SupernetClientProtocolReceiver.PACKET_FIND_PEERS;
+
+                    getID().write(payload, 1);
+
+                    DatagramPacket packet = new DatagramPacket(payload, payload.length, address);
+                    mUDPSocket.send(packet);
+                } catch (IOException e) {
+                    LOGGER.error("", e);
+                }
+            }
+        });
 
     }
 
@@ -52,6 +77,7 @@ class SupernetClientImp extends SupernetClient {
             mUDPReceiveThread = new Thread(mReceiveUDPTask, "Receive UDP");
             mUDPReceiveThread.start();
 
+            mPeerMaintenence = new PeerMaintenenceTask(this);
             mPeerMaintenence.start();
 
             doSTUNBindingRequest();

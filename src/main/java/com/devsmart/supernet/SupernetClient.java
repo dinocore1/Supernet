@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -22,6 +23,8 @@ public abstract class SupernetClient {
     public ID getID() {
         return mClientId;
     }
+
+    public abstract void bootstrap(String address);
 
     public static class Builder {
 

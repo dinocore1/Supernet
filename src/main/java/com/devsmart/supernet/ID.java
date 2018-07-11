@@ -13,7 +13,11 @@ public class ID {
     private byte[] mData = new byte[NUM_BYTES];
 
     public static ID fromBase64String(String str) {
-        byte[] data = BaseEncoding.base64Url().decode(str);
+        return fromString(str, BaseEncoding.base64Url());
+    }
+
+    public static ID fromString(String str, BaseEncoding baseEncoding) {
+        byte[] data = baseEncoding.decode(str);
         return new ID(data, 0);
     }
 
@@ -26,6 +30,8 @@ public class ID {
     public ID(byte[] buf, int offset) {
         System.arraycopy(buf, offset, mData, 0, NUM_BYTES);
     }
+
+
 
     public int write(byte[] buf, int offset) {
         System.arraycopy(mData, 0, buf, offset, NUM_BYTES);
@@ -72,6 +78,10 @@ public class ID {
 
     public String toString(BaseEncoding encoding) {
         return encoding.encode(mData, 0, NUM_BYTES);
+    }
+
+    public String toBase64String() {
+        return toString(BaseEncoding.base64Url());
     }
 
     @Override

@@ -25,7 +25,6 @@ public class PeerMaintenenceTask {
 
     public PeerMaintenenceTask(SupernetClientImp client) {
         mClient = client;
-
         mBucketList = new ArrayList<RoutingTable.Bucket>(Arrays.asList(mClient.mPeerRoutingTable.mBuckets));
     }
 

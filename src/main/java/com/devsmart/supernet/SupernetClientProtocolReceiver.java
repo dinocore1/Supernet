@@ -2,14 +2,7 @@ package com.devsmart.supernet;
 
 
 import com.devsmart.supernet.events.NewPeerDiscovered;
-import com.devsmart.ubjson.UBArray;
-import com.devsmart.ubjson.UBValue;
-import com.devsmart.ubjson.UBValueFactory;
-import com.devsmart.ubjson.UBWriter;
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
