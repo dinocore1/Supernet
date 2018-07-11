@@ -71,7 +71,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     public static final int PACKET_CONNECT = 3;
     public static final int PACKET_DISCONNECT = 4;
 
-    private SupernetClientImp mClient;
+    SupernetClientImp mClient;
 
     @Override
     public boolean receive(DatagramPacket packet) {

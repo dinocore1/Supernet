@@ -33,6 +33,7 @@ class SupernetClientImp extends SupernetClient {
     RoutingTable mPeerRoutingTable;
     public final EventBus mEventBus = new EventBus();
     PeerMaintenenceTask mPeerMaintenence;
+    SupernetClientProtocolReceiver mBaseProtocolReceiver;
 
 
     public void peerSeen(SocketAddress remoteAddress, ID remoteId) {
@@ -77,6 +78,10 @@ class SupernetClientImp extends SupernetClient {
             mUDPReceiveThread = new Thread(mReceiveUDPTask, "Receive UDP");
             mUDPReceiveThread.start();
 
+            mBaseProtocolReceiver = new SupernetClientProtocolReceiver();
+            mBaseProtocolReceiver.mClient = this;
+            registerReceiver(mBaseProtocolReceiver);
+
             mPeerMaintenence = new PeerMaintenenceTask(this);
             mPeerMaintenence.start();
 
@@ -91,6 +96,7 @@ class SupernetClientImp extends SupernetClient {
     public void shutdown() {
         try {
             mPeerMaintenence.stop();
+            unregisterReceiver(mBaseProtocolReceiver);
             if (mUDPReceiveThread != null) {
                 mUDPSocketRunning = false;
                 mUDPReceiveThread.join();
