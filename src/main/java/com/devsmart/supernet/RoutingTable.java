@@ -32,7 +32,12 @@ public class RoutingTable {
 
         public synchronized void addPeer(Peer p) {
             Preconditions.checkArgument(p.id.getNumSharedPrefixBits(mLocalId) == sharedPrefixBits);
-            peers.add(p);
+            Peer existingPeer = peers.floor(p);
+            if(existingPeer != null) {
+                existingPeer.markSeen();
+            } else {
+                peers.add(p);
+            }
         }
 
         public synchronized ImmutableSortedSet<Peer> getOldestPeers() {

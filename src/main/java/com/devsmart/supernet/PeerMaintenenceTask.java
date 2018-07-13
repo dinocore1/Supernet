@@ -24,12 +24,12 @@ public class PeerMaintenenceTask {
     private final SupernetClientImp mClient;
     private ScheduledFuture<?> mFindPeersTask;
     private ScheduledFuture<?> mKeepAliveTask;
-    private final ArrayList<RoutingTable.Bucket> mBucketList;
+    private final RoutingTable.Bucket[] mBucketList;
 
 
     public PeerMaintenenceTask(SupernetClientImp client) {
         mClient = client;
-        mBucketList = new ArrayList<RoutingTable.Bucket>(Arrays.asList(mClient.mPeerRoutingTable.mBuckets));
+        mBucketList = mClient.mPeerRoutingTable.mBuckets;
     }
 
     public void start() {
@@ -60,7 +60,8 @@ public class PeerMaintenenceTask {
 
         @Override
         public void run() {
-            Collections.shuffle(mBucketList);
+
+            //Collections.shuffle(mBucketList);
             for (RoutingTable.Bucket b : mBucketList) {
                 ImmutableSortedSet<Peer> peers = b.getOldestPeers();
 
