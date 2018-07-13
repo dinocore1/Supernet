@@ -34,8 +34,10 @@ class SupernetClientImp extends SupernetClient {
 
 
     public void peerSeen(Peer peer) {
-        RoutingTable.Bucket bucket = mPeerRoutingTable.getBucket(peer.id);
-        bucket.addPeer(peer);
+        if(!peer.id.equals(mClientId)) {
+            RoutingTable.Bucket bucket = mPeerRoutingTable.getBucket(peer.id);
+            bucket.addPeer(peer);
+        }
     }
 
     @Override
@@ -68,6 +70,9 @@ class SupernetClientImp extends SupernetClient {
     @Override
     public void start() {
         try {
+
+            LOGGER.info("Local peer starting with ID: {}", mClientId);
+
             mAddresses.add(mUDPSocket.getLocalSocketAddress());
 
             mBaseProtocolReceiver = new SupernetClientProtocolReceiver();

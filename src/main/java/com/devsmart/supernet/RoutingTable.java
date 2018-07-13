@@ -62,16 +62,14 @@ public class RoutingTable {
 
     public RoutingTable(ID localId) {
         mLocalId = localId;
+        for(int i = 0;i<mBuckets.length;i++) {
+            mBuckets[i] = new Bucket(i);
+        }
     }
 
     public synchronized Bucket getBucket(ID id) {
         final int index = mLocalId.getNumSharedPrefixBits(id);
-        Bucket retval = mBuckets[index];
-        if(retval == null) {
-            retval = new Bucket(index);
-            mBuckets[index] = retval;
-        }
-        return retval;
+        return mBuckets[index];
     }
 
     public Iterable<Peer> getClosestPeers(ID id) {

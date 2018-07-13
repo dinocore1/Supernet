@@ -87,7 +87,7 @@ public class ID implements Comparable<ID> {
 
     @Override
     public String toString() {
-        return toString(BaseEncoding.base64Url());
+        return toString(BaseEncoding.base16());
     }
 
     public String breifToString() {

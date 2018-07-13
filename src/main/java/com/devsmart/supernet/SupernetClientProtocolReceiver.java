@@ -160,7 +160,9 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
 
             Peer peer = new Peer(remoteId, packet.getAddress(), packet.getPort());
 
-            LOGGER.trace("{} Received from: {}", isRequest ? "Ping" : "Pong", peer);
+            boolean isPing = isRequest;
+
+            LOGGER.trace("{} Received from: {}", isPing ? "Ping" : "Pong", peer);
 
             mClient.peerSeen(peer);
 

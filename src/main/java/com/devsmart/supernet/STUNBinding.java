@@ -43,15 +43,19 @@ public class STUNBinding implements Callable<InetSocketAddress> {
 
     }
 
-    private void receiveResponse(DatagramPacket p) throws Exception {
-        MessageHeader receiveMH = MessageHeader.parseHeader(p.getData());
-        receiveMH.parseAttributes(p.getData());
-        if (receiveMH.equalTransactionID(mRequest)) {
-            final MappedAddress ma = (MappedAddress) receiveMH.getMessageAttribute(MessageAttribute.MessageAttributeType.MappedAddress);
-            final ChangedAddress ca = (ChangedAddress) receiveMH.getMessageAttribute(MessageAttribute.MessageAttributeType.ChangedAddress);
+    private void receiveResponse(DatagramPacket p) {
+        try {
+            MessageHeader receiveMH = MessageHeader.parseHeader(p.getData());
+            receiveMH.parseAttributes(p.getData());
+            if (receiveMH.equalTransactionID(mRequest)) {
+                final MappedAddress ma = (MappedAddress) receiveMH.getMessageAttribute(MessageAttribute.MessageAttributeType.MappedAddress);
+                final ChangedAddress ca = (ChangedAddress) receiveMH.getMessageAttribute(MessageAttribute.MessageAttributeType.ChangedAddress);
 
-            LOGGER.info("resolved external address: {}", ma);
-            mAddresses.add(new InetSocketAddress(ma.getAddress().getInetAddress(), ma.getPort()));
+                LOGGER.info("resolved external address: {}", ma);
+                mAddresses.add(new InetSocketAddress(ma.getAddress().getInetAddress(), ma.getPort()));
+            }
+        } catch (Exception e) {
+            LOGGER.error("", e);
         }
     }
 
