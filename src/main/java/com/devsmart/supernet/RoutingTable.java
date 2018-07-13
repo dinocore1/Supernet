@@ -2,7 +2,9 @@ package com.devsmart.supernet;
 
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.UnmodifiableIterator;
 
 import java.util.*;
 
@@ -22,15 +24,32 @@ public class RoutingTable {
 
     public class Bucket {
         final int sharedPrefixBits;
-        final TreeSet<Peer> peers = new TreeSet<Peer>(Peer.BY_ID_ADDRESS);
+        private final TreeSet<Peer> peers = new TreeSet<Peer>(Peer.BY_ID);
 
         public Bucket(int sharedPrefixBits) {
             this.sharedPrefixBits = sharedPrefixBits;
         }
 
-        public void addPeer(Peer p) {
+        public synchronized void addPeer(Peer p) {
             Preconditions.checkArgument(p.id.getNumSharedPrefixBits(mLocalId) == sharedPrefixBits);
             peers.add(p);
+        }
+
+        public synchronized ImmutableSortedSet<Peer> getOldestPeers() {
+            return ImmutableSortedSet.orderedBy(Peer.OLDEST_ALIVE_FIRST)
+                    .addAll(peers)
+                    .build();
+        }
+
+        public synchronized void trimPeers() {
+
+            ImmutableSortedSet<Peer> oldestFirst = getOldestPeers();
+            UnmodifiableIterator<Peer> it = oldestFirst.descendingIterator();
+
+            while(it.hasNext() && peers.size() > MAX_BUCKET_SIZE) {
+                Peer peerToRemove = it.next();
+                peers.remove(peerToRemove);
+            }
         }
     }
 

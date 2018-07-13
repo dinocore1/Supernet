@@ -35,6 +35,7 @@ class SupernetClientImp extends SupernetClient {
 
     public void peerSeen(Peer peer) {
         RoutingTable.Bucket bucket = mPeerRoutingTable.getBucket(peer.id);
+        bucket.addPeer(peer);
     }
 
     @Override

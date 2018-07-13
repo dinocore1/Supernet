@@ -24,7 +24,7 @@ public class Peer {
         }
     };
 
-    public static final Comparator<Peer> BY_ID_ADDRESS = new Comparator<Peer>() {
+    public static final Comparator<Peer> BY_ID = new Comparator<Peer>() {
         @Override
         public int compare(Peer o1, Peer o2) {
 
