@@ -37,8 +37,8 @@ public class PeerMaintenenceTask {
             mFindPeersTask.cancel(false);
         }
 
-        mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
-        mKeepAliveTask = mClient.mMainThread.scheduleWithFixedDelay(mKeepAliveFunction, 10, 5, TimeUnit.SECONDS);
+        //mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
+        mKeepAliveTask = mClient.mMainThread.scheduleWithFixedDelay(mKeepAliveFunction, 2, 2, TimeUnit.SECONDS);
 
     }
 
@@ -82,16 +82,20 @@ public class PeerMaintenenceTask {
 
         @Override
         public void run() {
-            for (RoutingTable.Bucket b : mBucketList) {
-                ImmutableSortedSet<Peer> peers = b.getOldestPeers();
-                UnmodifiableIterator<Peer> it = peers.iterator();
-                int i = 0;
-                while (it.hasNext() && i < RoutingTable.MAX_BUCKET_SIZE) {
-                    Peer p = it.next();
-                    long randomDelay = mRandom.nextInt(300);
-                    mClient.mMainThread.schedule(createPingFuture(p), randomDelay, TimeUnit.MILLISECONDS);
-                    i++;
+            try {
+                for (RoutingTable.Bucket b : mBucketList) {
+                    ImmutableSortedSet<Peer> peers = b.getOldestPeers();
+                    UnmodifiableIterator<Peer> it = peers.iterator();
+                    int i = 0;
+                    while (it.hasNext() && i < RoutingTable.MAX_BUCKET_SIZE) {
+                        Peer p = it.next();
+                        long randomDelay = mRandom.nextInt(300);
+                        mClient.mMainThread.schedule(createPingFuture(p), randomDelay, TimeUnit.MILLISECONDS);
+                        i++;
+                    }
                 }
+            } catch (Exception e) {
+                LOGGER.error("", e);
             }
         }
 

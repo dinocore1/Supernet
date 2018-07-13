@@ -165,7 +165,8 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             mClient.peerSeen(peer);
 
             if(isRequest) {
-                mClient.mUDPSocket.send(createPong((InetSocketAddress) remoteAddress, mClient.getID()));
+                LOGGER.trace("sending pong to: {}", peer);
+                mClient.mUDPSocket.send(createPong(peer.getSocketAddress(), mClient.getID()));
             }
 
             return true;
