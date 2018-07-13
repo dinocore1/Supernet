@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class Utils {
 
-    private static final Pattern REGEX_ADDRESS = Pattern.compile("([0-9a-zA-Z\\.]*):([0-9]+)");
+    private static final Pattern REGEX_ADDRESS = Pattern.compile("([0-9a-zA-Z\\.\\-]*):([0-9]+)");
 
     public static InetSocketAddress parseSocketAddress(String str) {
         Matcher m = REGEX_ADDRESS.matcher(str);
