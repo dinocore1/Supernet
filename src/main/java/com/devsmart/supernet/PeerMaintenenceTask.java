@@ -38,7 +38,7 @@ public class PeerMaintenenceTask {
         }
 
         //mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
-        mKeepAliveTask = mClient.mMainThread.scheduleWithFixedDelay(mKeepAliveFunction, 2, 2, TimeUnit.SECONDS);
+        mKeepAliveTask = mClient.mMainThread.scheduleWithFixedDelay(mKeepAliveFunction, 10, 5, TimeUnit.SECONDS);
 
     }
 
@@ -132,7 +132,7 @@ public class PeerMaintenenceTask {
             LOGGER.trace("sending ping to: {}", p);
 
             InetSocketAddress address = p.getSocketAddress();
-            DatagramPacket packet = SupernetClientProtocolReceiver.createPing(address, p.id);
+            DatagramPacket packet = SupernetClientProtocolReceiver.createPing(address, mClient.mClientId);
             mClient.mUDPSocket.send(packet);
 
         } catch (IOException e) {
