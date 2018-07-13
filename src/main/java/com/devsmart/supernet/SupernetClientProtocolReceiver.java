@@ -141,7 +141,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         return new DatagramPacket(payload, payload.length, remoteAddress);
     }
 
-    public static DatagramPacket createPong(InetSocketAddress remoteAddress, ID id) {
+    public static DatagramPacket createPong(InetSocketAddress remoteAddress, ID id) throws SocketException {
         Inet4Address ipv4Address = (Inet4Address) remoteAddress.getAddress();
 
         byte[] payload = new byte[1 + ID.NUM_BYTES + 6]; // header + ID + IPv4 SocketAddress

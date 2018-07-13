@@ -4,8 +4,6 @@ version '1.0.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'application'
 
-sourceCompatibility = 1.7
-
 repositories {
     mavenCentral()
 }
@@ -23,3 +21,8 @@ dependencies {
 }
 
 mainClassName = 'com.devsmart.supernet.Main'
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '1.7'
+    targetCompatibility = '1.7'
+}
