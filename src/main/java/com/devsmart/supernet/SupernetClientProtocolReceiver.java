@@ -134,7 +134,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         }
     }
 
-    public static DatagramPacket createPing(InetSocketAddress remoteAddress, ID id) {
+    public static DatagramPacket createPing(InetSocketAddress remoteAddress, ID id) throws SocketException {
         byte[] payload = new byte[1 + ID.NUM_BYTES];
         payload[0] = HEADER_MAGIC | PACKET_PING | HEADER_REQUEST_BIT;
         id.write(payload, 1);
