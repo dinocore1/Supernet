@@ -11,12 +11,16 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class SupernetClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SupernetClient.class);
 
     ID mClientId;
+    final Set<SocketAddress> mAddresses = new HashSet<SocketAddress>();
 
     SupernetClient() {}
 
@@ -25,12 +29,12 @@ public abstract class SupernetClient {
     }
 
     public abstract void bootstrap(String address);
+    public abstract DatagramSocket getUDPSocket();
 
     public static class Builder {
 
         private ID mId;
         private int mUDPPort = 11382;
-        private SocketAddress mSTUNServer = new InetSocketAddress("stun.l.google.com", 19302);
 
         public Builder withId(ID id) {
             mId = id;
@@ -48,10 +52,9 @@ public abstract class SupernetClient {
             SupernetClientImp retval = new SupernetClientImp();
             retval.mClientId = mId;
             retval.mPeerRoutingTable = new RoutingTable(mId);
-            retval.mSTUNServer = mSTUNServer;
+
             retval.mUDPSocket = new DatagramSocket(new InetSocketAddress(InetAddresses.forString("0.0.0.0"), mUDPPort));
             retval.mUDPSocket.setReuseAddress(true);
-            retval.mUDPSocket.setSoTimeout(1000);
             return retval;
         }
     }

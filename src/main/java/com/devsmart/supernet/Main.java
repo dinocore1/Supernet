@@ -5,6 +5,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.UUID;
 
@@ -68,6 +70,13 @@ public class Main {
 
 
             SupernetClient client = builder.build();
+
+            InetSocketAddress stunServer = new InetSocketAddress(InetAddress.getByName("stun.l.google.com"), 19302);
+            STUNBinding binding = new STUNBinding(client.getUDPSocket(), stunServer);
+            InetSocketAddress externalAddress = binding.call();
+            if(externalAddress != null) {
+                client.mAddresses.add(externalAddress);
+            }
 
             client.start();
 

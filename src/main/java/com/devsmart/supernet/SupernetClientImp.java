@@ -15,14 +15,11 @@ class SupernetClientImp extends SupernetClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SupernetClientImp.class);
 
-    SocketAddress mSTUNServer;
     DatagramSocket mUDPSocket;
-    final ArrayList<SocketAddress> mAddresses = new ArrayList<SocketAddress>();
 
     private Thread mUDPReceiveThread;
     private boolean mUDPSocketRunning;
-    private STUNBindingRequest mSTUNBindingRequest;
-    private ArrayList<PacketReceiver> mPacketReceivers = new ArrayList<PacketReceiver>();
+    private PacketReceiver mPacketReceiver;
     final ScheduledExecutorService mMainThread = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -38,8 +35,6 @@ class SupernetClientImp extends SupernetClient {
 
     public void peerSeen(Peer peer) {
         RoutingTable.Bucket bucket = mPeerRoutingTable.getBucket(peer.id);
-
-
     }
 
     @Override
@@ -65,23 +60,24 @@ class SupernetClientImp extends SupernetClient {
     }
 
     @Override
+    public DatagramSocket getUDPSocket() {
+        return mUDPSocket;
+    }
+
+    @Override
     public void start() {
         try {
-            mAddresses.clear();
             mAddresses.add(mUDPSocket.getLocalSocketAddress());
 
+            mBaseProtocolReceiver = new SupernetClientProtocolReceiver();
+            mBaseProtocolReceiver.mClient = this;
+            mPacketReceiver = mBaseProtocolReceiver;
 
             mUDPReceiveThread = new Thread(mReceiveUDPTask, "Receive UDP");
             mUDPReceiveThread.start();
 
-            mBaseProtocolReceiver = new SupernetClientProtocolReceiver();
-            mBaseProtocolReceiver.mClient = this;
-            registerReceiver(mBaseProtocolReceiver);
-
             mPeerMaintenence = new PeerMaintenenceTask(this);
             mPeerMaintenence.start();
-
-            doSTUNBindingRequest();
 
         } catch (Exception e) {
             LOGGER.error("", e);
@@ -92,7 +88,6 @@ class SupernetClientImp extends SupernetClient {
     public void shutdown() {
         try {
             mPeerMaintenence.stop();
-            unregisterReceiver(mBaseProtocolReceiver);
             if (mUDPReceiveThread != null) {
                 mUDPSocketRunning = false;
                 mUDPReceiveThread.join();
@@ -105,18 +100,8 @@ class SupernetClientImp extends SupernetClient {
 
     }
 
-    private void doSTUNBindingRequest() throws Exception {
-        STUNBindingRequest bindingRequest = new STUNBindingRequest(this, mSTUNServer);
-        registerReceiver(bindingRequest);
-        bindingRequest.doIt();
-    }
-
-    public void registerReceiver(PacketReceiver receiver) {
-        mPacketReceivers.add(receiver);
-    }
-
-    public void unregisterReceiver(PacketReceiver receiver) {
-        mPacketReceivers.remove(receiver);
+    public void setReceiver(PacketReceiver receiver) {
+        mPacketReceiver = receiver;
     }
 
     public void post(Runnable r) {
@@ -141,31 +126,37 @@ class SupernetClientImp extends SupernetClient {
 
         @Override
         public void run() {
-            LOGGER.info("starting UDP server on: {}", mUDPSocket.getLocalSocketAddress());
-            mUDPSocketRunning = true;
-            while(mUDPSocketRunning) {
-                final DatagramPacket receivedPacket = createPacket();
-                try {
-                    mUDPSocket.receive(receivedPacket);
+            try {
+                LOGGER.info("starting UDP server on: {}", mUDPSocket.getLocalSocketAddress());
+                mUDPSocketRunning = true;
+                mUDPSocket.setSoTimeout(1000);
 
-                    LOGGER.trace("recived packet {}", receivedPacket.getAddress());
+                while (mUDPSocketRunning) {
+                    final DatagramPacket receivedPacket = createPacket();
+                    try {
+                        mUDPSocket.receive(receivedPacket);
 
-                    post(new Runnable() {
-                        @Override
-                        public void run() {
-                            for(PacketReceiver r : mPacketReceivers) {
-                                if(r.receive(receivedPacket)) {
-                                    break;
+                        LOGGER.trace("received packet {}", receivedPacket.getAddress());
+
+                        post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mPacketReceiver != null) {
+                                    mPacketReceiver.receive(receivedPacket);
+                                } else {
+                                    LOGGER.warn("dropped packet");
                                 }
                             }
-                        }
-                    });
+                        });
 
-                } catch (SocketTimeoutException e) {
-                } catch (IOException e) {
-                    LOGGER.error("", e);
+                    } catch (SocketTimeoutException e) {
+                    }
                 }
+
+            }catch (IOException e) {
+                LOGGER.error("", e);
             }
+
             LOGGER.info("exiting UDP receive thread");
 
         }
