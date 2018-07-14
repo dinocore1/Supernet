@@ -10,14 +10,6 @@ import java.util.*;
 
 public class RoutingTable {
 
-    private static final Comparator<Peer> OLDEST_PEER_COMPARATOR = new Comparator<Peer>() {
-
-        @Override
-        public int compare(Peer o1, Peer o2) {
-            return o1.mFirstSeen.compareTo(o2.mFirstSeen);
-        }
-    };
-
     public static final int MAX_BUCKET_SIZE = 8;
 
     private final ID mLocalId;
@@ -67,31 +59,36 @@ public class RoutingTable {
         }
     }
 
+    public synchronized void addPeer(Peer p) {
+        Bucket b = getBucket(p.id);
+        b.addPeer(p);
+    }
+
     public synchronized Bucket getBucket(ID id) {
         final int index = mLocalId.getNumSharedPrefixBits(id);
         return mBuckets[index];
     }
 
+    public synchronized Peer lookupPeer(Peer peer) {
+        Bucket b = getBucket(peer.id);
+        Peer retval = b.peers.floor(peer);
+        if(retval != null) {
+            return retval;
+        } else {
+            return peer;
+        }
+    }
+
     public Iterable<Peer> getClosestPeers(ID id) {
-
         ArrayList<Iterable<Peer>> iterators = new ArrayList<Iterable<Peer>>(30);
-
         for(int i = mLocalId.getNumSharedPrefixBits(id); i>=0;i--) {
             Bucket bucket = mBuckets[i];
             if(bucket != null) {
                 iterators.add(bucket.peers);
             }
         }
-
         return Iterables.concat(iterators);
-
     }
-
-
-    void evictPeer(Bucket bucket, Peer peer) {
-
-    }
-
 
 
 

@@ -37,7 +37,7 @@ public class PeerMaintenenceTask {
             mFindPeersTask.cancel(false);
         }
 
-        //mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
+        mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
         mKeepAliveTask = mClient.mMainThread.scheduleWithFixedDelay(mKeepAliveFunction, 10, 5, TimeUnit.SECONDS);
 
     }
@@ -113,14 +113,7 @@ public class PeerMaintenenceTask {
         try {
             LOGGER.trace("sending find peers to: {}", p);
 
-            byte[] payload = new byte[1 + ID.NUM_BYTES];
-            payload[0] = SupernetClientProtocolReceiver.HEADER_MAGIC
-                    | SupernetClientProtocolReceiver.HEADER_REQUEST_BIT
-                    | SupernetClientProtocolReceiver.PACKET_FIND_PEERS;
-
-            mClient.getID().write(payload, 1);
-
-            DatagramPacket packet = new DatagramPacket(payload, payload.length, p.getSocketAddress());
+            DatagramPacket packet = SupernetClientProtocolReceiver.createFindPeersRequest(p.getSocketAddress(), mClient.mClientId);
             mClient.mUDPSocket.send(packet);
         } catch (IOException e) {
             LOGGER.error("", e);
@@ -131,10 +124,8 @@ public class PeerMaintenenceTask {
         try {
             LOGGER.trace("sending ping to: {}", p);
 
-            InetSocketAddress address = p.getSocketAddress();
-            DatagramPacket packet = SupernetClientProtocolReceiver.createPing(address, mClient.mClientId);
+            DatagramPacket packet = SupernetClientProtocolReceiver.createPing(p.getSocketAddress(), mClient.mClientId);
             mClient.mUDPSocket.send(packet);
-
         } catch (IOException e) {
             LOGGER.error("", e);
         }

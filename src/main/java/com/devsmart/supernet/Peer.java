@@ -36,6 +36,7 @@ public class Peer {
     };
 
     public enum Status {
+        UNKNOWN(-1),
         ALIVE(10000),
         DIEING(30000),
         DEAD(90000);
@@ -50,15 +51,21 @@ public class Peer {
     public final ID id;
     public final InetAddress address;
     public final int port;
-    public Date mFirstSeen;
-    public Date mLastSeen;
+    private final Date mFirstSeen;
+    private Date mLastSeen;
 
     public Peer(ID id, InetAddress address, int port) {
         this.id = id;
         this.address = address;
         this.port = port;
         this.mFirstSeen = new Date();
-        markSeen();
+    }
+
+    public Peer(ID peerId, InetSocketAddress peerSocketAddress) {
+        this.id = peerId;
+        this.address = peerSocketAddress.getAddress();
+        this.port = peerSocketAddress.getPort();
+        this.mFirstSeen = new Date();
     }
 
     public void markSeen() {
@@ -66,6 +73,10 @@ public class Peer {
     }
 
     public Status getStatus() {
+        if(mLastSeen == null) {
+            return Status.UNKNOWN;
+        }
+
         Date now = new Date();
         long milliSec = now.getTime() - mLastSeen.getTime();
 
@@ -99,6 +110,6 @@ public class Peer {
 
     @Override
     public String toString() {
-        return String.format("%s/%s (%s)", id.breifToString(), address, getStatus());
+        return String.format("[%s|%s (%s)]", id.breifToString(), address, getStatus());
     }
 }
