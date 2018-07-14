@@ -144,7 +144,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             closestPeers.add(nearByPeers.next());
         }
 
-        byte[] payload = new byte[1 + (closestPeers.size() * (ID.NUM_BYTES + 6))];
+        byte[] payload = new byte[2 + (closestPeers.size() * (ID.NUM_BYTES + 6))];
         payload[0] = HEADER_MAGIC | PACKET_FIND_PEERS;
         payload[1] = (byte) closestPeers.size();
 
