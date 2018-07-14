@@ -111,33 +111,6 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         return false;
     }
 
-    static void writeIPv4SocketAddress(Inet4Address socketAddress, int port, byte[] buf, int offset) {
-
-        byte[] address = socketAddress.getAddress();
-
-        System.arraycopy(address, 0, buf, offset, 4);
-
-
-        buf[offset + 4] = (byte) ((port >>> 8) & 0xFF);
-        buf[offset + 5] = (byte) (port & 0xFF);
-    }
-
-    static InetSocketAddress readIPv4SocketAddress(byte[] buf, int offset) {
-        try {
-            byte[] addressBytes = new byte[4];
-            System.arraycopy(buf, offset, addressBytes, 0, 4);
-            InetAddress address = Inet4Address.getByAddress(addressBytes);
-            int port = (0xFF & buf[offset + 4]) << 8;
-            port |= (0xFF & buf[offset + 5]);
-
-            return new InetSocketAddress(address, port);
-        } catch (UnknownHostException e) {
-            LOGGER.error("", e);
-            Throwables.propagate(e);
-            return null;
-        }
-    }
-
     public static DatagramPacket createPing(InetSocketAddress remoteAddress, ID id) throws SocketException {
         byte[] payload = new byte[1 + ID.NUM_BYTES];
         payload[0] = HEADER_MAGIC | PACKET_PING | HEADER_REQUEST_BIT;
@@ -151,7 +124,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         byte[] payload = new byte[1 + ID.NUM_BYTES + 6]; // header + ID + IPv4 SocketAddress
         payload[0] = HEADER_MAGIC | PACKET_PING;
         id.write(payload, 1);
-        writeIPv4SocketAddress(ipv4Address, remoteAddress.getPort(), payload, 1 + ID.NUM_BYTES);
+        Utils.writeIPv4SocketAddress(ipv4Address, remoteAddress.getPort(), payload, 1 + ID.NUM_BYTES);
 
         return new DatagramPacket(payload, payload.length, remoteAddress);
     }
@@ -180,7 +153,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             p.id.write(payload, 2 + i*(ID.NUM_BYTES + 6));
             InetSocketAddress address = p.getSocketAddress();
 
-            writeIPv4SocketAddress((Inet4Address) address.getAddress(), address.getPort(),
+            Utils.writeIPv4SocketAddress((Inet4Address) address.getAddress(), address.getPort(),
                     payload, 2 + i*(ID.NUM_BYTES+6) + ID.NUM_BYTES);
             i++;
         }
@@ -224,7 +197,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
                 int size = payload[1];
                 for(int i=0;i<size;i++) {
                     ID peerId = new ID(payload, 2 + i*(ID.NUM_BYTES+6));
-                    InetSocketAddress peerSocketAddress = readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
+                    InetSocketAddress peerSocketAddress = Utils.readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
 
                     Peer peer = mClient.mPeerRoutingTable.lookupPeer(new Peer(peerId, peerSocketAddress));
 
