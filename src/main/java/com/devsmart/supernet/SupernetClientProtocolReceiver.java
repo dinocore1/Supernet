@@ -197,13 +197,15 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
                 int size = payload[1];
                 for(int i=0;i<size;i++) {
                     ID peerId = new ID(payload, 2 + i*(ID.NUM_BYTES+6));
-                    InetSocketAddress peerSocketAddress = Utils.readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
+                    if(!peerId.equals(mClient.mClientId)) {
+                        InetSocketAddress peerSocketAddress = Utils.readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
 
-                    Peer peer = mClient.mPeerRoutingTable.lookupPeer(new Peer(peerId, peerSocketAddress));
+                        Peer peer = mClient.mPeerRoutingTable.lookupPeer(new Peer(peerId, peerSocketAddress));
 
-                    LOGGER.trace("discovered new peer: {} from: {}", peer, packet.getSocketAddress());
+                        LOGGER.trace("discovered new peer: {} from: {}", peer, packet.getSocketAddress());
 
-                    mClient.mPeerRoutingTable.addPeer(peer);
+                        mClient.mPeerRoutingTable.addPeer(peer);
+                    }
                 }
 
                 return true;

@@ -65,7 +65,8 @@ public class RoutingTable {
     }
 
     public synchronized Bucket getBucket(ID id) {
-        final int index = mLocalId.getNumSharedPrefixBits(id);
+        int index = mLocalId.getNumSharedPrefixBits(id);
+        index = Math.min(index, (ID.NUM_BYTES*8)-1);
         return mBuckets[index];
     }
 
