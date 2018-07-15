@@ -160,7 +160,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         return new DatagramPacket(payload, payload.length, remoteAddress);
     }
 
-    public static DatagramPacket createRoute(SocketAddress remoteAddress, ID target, int hops, byte[] data, int offset, int length) {
+    public static DatagramPacket createRoute(SocketAddress remoteAddress, ID target, int hops, byte[] data, int offset, int length) throws SocketException {
         byte[] payload = new byte[1 + ID.NUM_BYTES + 1 + length];
         payload[0] = HEADER_MAGIC | PACKET_ROUTE | HEADER_REQUEST_BIT;
         target.write(payload, 1);
