@@ -13,6 +13,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 public abstract class SupernetClient {
@@ -30,6 +31,8 @@ public abstract class SupernetClient {
 
     public abstract void bootstrap(String address);
     public abstract DatagramSocket getUDPSocket();
+    public abstract  void sendPacket(ID target, byte[] data, int offset, int len) throws IOException;
+    public abstract void packetReceived(byte[] data, int offset, int len);
 
     public static class Builder {
 

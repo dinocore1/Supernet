@@ -1,8 +1,7 @@
 package com.devsmart.supernet;
 
 
-import com.devsmart.supernet.events.NewPeerDiscovered;
-import com.google.common.base.Throwables;
+import com.google.common.primitives.UnsignedBytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +41,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     Payload: UBJSON Array list of ID+IPv4 Addresses closest to target
 
     Route Request:
-    Payload: uint8 hops + uint16 packet size + data payload
+    Payload: ID target + uint8 hops + data payload
 
     Route Response:
     OK/ERROR
@@ -81,11 +80,11 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         byte[] data = packet.getData();
         byte header = data[0];
 
-        if((header & HEADER_MAGIC_MASK) == HEADER_MAGIC) {
+        if ((header & HEADER_MAGIC_MASK) == HEADER_MAGIC) {
             final int packetType = (header & HEADER_PACKET_TYPE_MASK);
             final boolean isRequest = (header & HEADER_REQUEST_BIT) > 0;
 
-            switch(packetType) {
+            switch (packetType) {
                 case PACKET_PING:
                     return receivePing(isRequest, packet);
 
@@ -93,7 +92,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
                     return receiveFindPeers(isRequest, packet);
 
                 case PACKET_ROUTE:
-                    break;
+                    return route(isRequest, packet);
 
                 case PACKET_CONNECT:
                     break;
@@ -140,7 +139,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
     public static DatagramPacket createFindPeersResponse(SocketAddress remoteAddress, RoutingTable routingTable, ID targetPeer) throws SocketException {
         ArrayList<Peer> closestPeers = new ArrayList<Peer>(8);
         Iterator<Peer> nearByPeers = routingTable.getClosestPeers(targetPeer).iterator();
-        for(int i=0;i<8 && nearByPeers.hasNext();i++) {
+        for (int i = 0; i < 8 && nearByPeers.hasNext(); i++) {
             closestPeers.add(nearByPeers.next());
         }
 
@@ -148,21 +147,31 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
         payload[0] = HEADER_MAGIC | PACKET_FIND_PEERS;
         payload[1] = (byte) closestPeers.size();
 
-        int i=0;
-        for(Peer p : closestPeers) {
-            p.id.write(payload, 2 + i*(ID.NUM_BYTES + 6));
+        int i = 0;
+        for (Peer p : closestPeers) {
+            p.id.write(payload, 2 + i * (ID.NUM_BYTES + 6));
             InetSocketAddress address = p.getSocketAddress();
 
             Utils.writeIPv4SocketAddress((Inet4Address) address.getAddress(), address.getPort(),
-                    payload, 2 + i*(ID.NUM_BYTES+6) + ID.NUM_BYTES);
+                    payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
             i++;
         }
 
         return new DatagramPacket(payload, payload.length, remoteAddress);
     }
 
+    public static DatagramPacket createRoute(SocketAddress remoteAddress, ID target, int hops, byte[] data, int offset, int length) {
+        byte[] payload = new byte[1 + ID.NUM_BYTES + 1 + length];
+        payload[0] = HEADER_MAGIC | PACKET_ROUTE | HEADER_REQUEST_BIT;
+        target.write(payload, 1);
+        payload[1 + ID.NUM_BYTES] = UnsignedBytes.checkedCast(hops);
+        System.arraycopy(data, offset, payload, 1 + ID.NUM_BYTES + 1, length);
 
-    boolean receivePing(boolean isRequest, DatagramPacket packet) {
+        return new DatagramPacket(payload, payload.length, remoteAddress);
+    }
+
+
+    private boolean receivePing(boolean isRequest, DatagramPacket packet) {
         try {
             final ID remoteId = new ID(packet.getData(), 1);
             Peer peer = mClient.mPeerRoutingTable.lookupPeer(new Peer(remoteId, packet.getAddress(), packet.getPort()));
@@ -171,7 +180,7 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             boolean isPing = isRequest;
             LOGGER.trace("{} Received from: {}", isPing ? "Ping" : "Pong", peer);
 
-            if(isRequest) {
+            if (isRequest) {
                 LOGGER.trace("sending pong to: {}", peer);
                 mClient.mUDPSocket.send(createPong(peer.getSocketAddress(), mClient.getID()));
             }
@@ -195,9 +204,9 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
             } else {
                 byte[] payload = packet.getData();
                 int size = payload[1];
-                for(int i=0;i<size;i++) {
-                    ID peerId = new ID(payload, 2 + i*(ID.NUM_BYTES+6));
-                    if(!peerId.equals(mClient.mClientId)) {
+                for (int i = 0; i < size; i++) {
+                    ID peerId = new ID(payload, 2 + i * (ID.NUM_BYTES + 6));
+                    if (!peerId.equals(mClient.mClientId)) {
                         InetSocketAddress peerSocketAddress = Utils.readIPv4SocketAddress(payload, 2 + i * (ID.NUM_BYTES + 6) + ID.NUM_BYTES);
 
                         Peer peer = mClient.mPeerRoutingTable.lookupPeer(new Peer(peerId, peerSocketAddress));
@@ -218,5 +227,41 @@ public class SupernetClientProtocolReceiver implements PacketReceiver {
 
     }
 
+    private boolean route(boolean isRequest, DatagramPacket packet) {
+        try {
+            byte[] data = packet.getData();
+            int offset = packet.getOffset();
+            int length = packet.getLength();
 
+            final ID targetPeer = new ID(data, offset + 1);
+            if (mClient.mClientId.equals(targetPeer)) {
+                mClient.packetReceived(data, offset + 1 + ID.NUM_BYTES, length);
+            } else {
+                int hops = UnsignedBytes.toInt(data[offset + 1 + ID.NUM_BYTES]);
+
+                LOGGER.trace("route packet received: {} {}", targetPeer, hops);
+
+                hops--;
+                if (hops > 0) {
+                    Peer nearest;
+                    Iterator<Peer> it = mClient.mPeerRoutingTable.getClosestPeers(targetPeer).iterator();
+                    while (it.hasNext() && (nearest = it.next()).getStatus() == Peer.Status.ALIVE) {
+
+                        int payloadLen = length - (1 + ID.NUM_BYTES + 1);
+                        DatagramPacket forwardPacket = createRoute(nearest.getSocketAddress(), targetPeer, hops,
+                                data, offset + 1 + ID.NUM_BYTES + 1, payloadLen);
+
+                        mClient.mUDPSocket.send(forwardPacket);
+
+                        break;
+                    }
+                }
+            }
+
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("", e);
+            return true;
+        }
+    }
 }

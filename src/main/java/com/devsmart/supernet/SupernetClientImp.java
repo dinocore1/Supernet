@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -65,6 +66,29 @@ class SupernetClientImp extends SupernetClient {
     @Override
     public DatagramSocket getUDPSocket() {
         return mUDPSocket;
+    }
+
+    @Override
+    public void sendPacket(ID target, byte[] data, int offset, int len) throws IOException {
+        Peer nearest;
+        int hops = 10;
+        Iterator<Peer> it = mPeerRoutingTable.getClosestPeers(target).iterator();
+        while(it.hasNext() && (nearest = it.next()).getStatus() == Peer.Status.ALIVE) {
+
+            int payloadLen = len - (1 + ID.NUM_BYTES + 1);
+            DatagramPacket packet = SupernetClientProtocolReceiver.createRoute(nearest.getSocketAddress(), target, hops,
+                    data, offset + 1 + ID.NUM_BYTES + 1, payloadLen);
+
+            mUDPSocket.send(packet);
+
+            break;
+        }
+    }
+
+    @Override
+    public void packetReceived(byte[] data, int offset, int len) {
+        LOGGER.debug("packet received");
+
     }
 
     @Override

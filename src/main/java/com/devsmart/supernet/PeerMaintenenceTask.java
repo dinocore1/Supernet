@@ -24,6 +24,7 @@ public class PeerMaintenenceTask {
     private final SupernetClientImp mClient;
     private ScheduledFuture<?> mFindPeersTask;
     private ScheduledFuture<?> mKeepAliveTask;
+    private ScheduledFuture<?> mTrimPeersTask;
     private final RoutingTable.Bucket[] mBucketList;
 
 
@@ -39,6 +40,7 @@ public class PeerMaintenenceTask {
 
         mFindPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mFindPeersFunction, 10, 40, TimeUnit.SECONDS);
         mKeepAliveTask = mClient.mMainThread.scheduleWithFixedDelay(mKeepAliveFunction, 10, 5, TimeUnit.SECONDS);
+        mTrimPeersTask = mClient.mMainThread.scheduleWithFixedDelay(mTrimPeersFunction, 2, 2, TimeUnit.MINUTES);
 
     }
 
@@ -51,6 +53,11 @@ public class PeerMaintenenceTask {
         if (mKeepAliveTask != null) {
             mKeepAliveTask.cancel(false);
             mKeepAliveTask = null;
+        }
+
+        if (mTrimPeersTask != null) {
+            mTrimPeersTask.cancel(false);
+            mTrimPeersTask = null;
         }
     }
 
@@ -106,6 +113,20 @@ public class PeerMaintenenceTask {
                     sendPing(p);
                 }
             };
+        }
+    };
+
+    private final Runnable mTrimPeersFunction = new Runnable() {
+        @Override
+        public void run() {
+            LOGGER.trace("trimming peers");
+            try {
+                for (RoutingTable.Bucket b : mBucketList) {
+                    b.trimPeers();
+                }
+            } catch (Exception e) {
+                LOGGER.error("", e);
+            }
         }
     };
 
