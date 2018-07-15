@@ -31,6 +31,7 @@ public class Peer {
             return ComparisonChain.start()
                     .compare(o1.id, o2.id)
                     .compare(o1.address.getAddress(), o2.address.getAddress(), UnsignedBytes.lexicographicalComparator())
+                    .compare(o1.port, o2.port)
                     .result();
         }
     };
