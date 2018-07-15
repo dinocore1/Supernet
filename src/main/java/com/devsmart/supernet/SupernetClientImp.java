@@ -50,7 +50,7 @@ class SupernetClientImp extends SupernetClient {
 
                     InetSocketAddress address = Utils.parseSocketAddress(strAddress);
 
-                    LOGGER.trace("sending ping to: {}", address);
+                    LOGGER.trace("sending ping to: {}:{}", address, address.getPort());
 
                     DatagramPacket packet = SupernetClientProtocolReceiver.createPing(address, getID());
                     mUDPSocket.send(packet);

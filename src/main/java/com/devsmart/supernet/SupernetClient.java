@@ -37,7 +37,7 @@ public abstract class SupernetClient {
     public static class Builder {
 
         private ID mId;
-        private int mUDPPort = 11382;
+        private Integer mUDPPort;
 
         public Builder withId(ID id) {
             mId = id;
@@ -56,7 +56,12 @@ public abstract class SupernetClient {
             retval.mClientId = mId;
             retval.mPeerRoutingTable = new RoutingTable(mId);
 
-            retval.mUDPSocket = new DatagramSocket(new InetSocketAddress(InetAddresses.forString("0.0.0.0"), mUDPPort));
+            if(mUDPPort != null) {
+                retval.mUDPSocket = new DatagramSocket(mUDPPort);
+            } else {
+                retval.mUDPSocket = new DatagramSocket();
+            }
+
             retval.mUDPSocket.setReuseAddress(true);
             return retval;
         }

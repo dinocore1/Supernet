@@ -110,6 +110,6 @@ public class Peer {
 
     @Override
     public String toString() {
-        return String.format("[%s|%s (%s)]", id.breifToString(), address, getStatus());
+        return String.format("[%s|%s:%d (%s)]", id.breifToString(), address, port, getStatus());
     }
 }
