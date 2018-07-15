@@ -10,7 +10,7 @@ import java.util.*;
 
 public class RoutingTable {
 
-    public static final int MAX_BUCKET_SIZE = 2;
+    public static final int MAX_BUCKET_SIZE = 8;
 
     private final ID mLocalId;
 
